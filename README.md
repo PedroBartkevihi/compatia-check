@@ -4,6 +4,8 @@ Protótipo da COMPATIA: uma Progressive Web App que verifica, no próprio navega
 
 Autor: Pedro Farias.
 
+No ar: https://pedrobartkevihi.github.io/compatia-check/
+
 ## O que faz
 - Identifica navegador, sistema, motor de renderização e modo de exibição (aba ou app instalado).
 - Verifica 17 recursos em cinco grupos: base offline, instalação, reengajamento, segundo plano e integração com o aparelho. A verificação é por detecção de recursos (a API existe neste navegador?), sem pedir permissão ao usuário.
