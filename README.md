@@ -12,7 +12,7 @@ No ar: https://pedrobartkevihi.github.io/compatia-check/
 - Mostra o placar, o impacto de cada recurso que falta e os detalhes do ambiente.
 - **Comparar com outro aparelho:** gera um link com o resultado (no endereço, depois de `#comparar=`). Aberto em outro aparelho, mostra os dois resultados lado a lado e destaca as diferenças.
 - Funciona offline (service worker com cache), pode ser instalado e imprime o relatório.
-- Nada é enviado a servidores: tudo roda no navegador.
+- Nada é enviado a servidores: tudo roda no navegador. O link de comparação leva o resultado só para quem você o enviar, e quem o recebe vê um aviso de que ele pode ter sido alterado.
 
 ## Rodar
 É um site estático. Service worker e instalação exigem HTTPS ou `localhost`.

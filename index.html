@@ -3,13 +3,13 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="COMPATIA Check: verifica quais recursos de Progressive Web App funcionam neste navegador e compara aparelhos.">
+	<meta name="description" content="COMPATIA Check: detecta quais recursos de Progressive Web App este navegador oferece e compara aparelhos.">
 	<meta name="author" content="Pedro Farias">
 	<meta name="theme-color" content="#13315c">
 	<title>COMPATIA Check — compatibilidade de PWAs</title>
 	<link rel="manifest" href="manifest.webmanifest">
 	<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-	<link rel="apple-touch-icon" href="icons/icon-192.png">
+	<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -29,16 +29,16 @@
 	<main class="container">
 		<section class="resumo" id="resumo" aria-labelledby="aparelho-nome">
 			<div class="resumo-aparelho">
-				<span class="rotulo">Este aparelho</span>
+				<span class="rotulo">Este aparelho (estimado pelo navegador)</span>
 				<h1 id="aparelho-nome">Detectando o navegador…</h1>
 				<ul class="etiquetas" id="aparelho-etiquetas"></ul>
 			</div><!--resumo-aparelho-->
-			<div class="resumo-placar">
+			<div class="resumo-placar" aria-live="polite" aria-atomic="true">
 				<p class="placar"><span id="placar-valor">–</span> <span class="placar-total">de <span id="placar-total">–</span></span></p>
 				<div class="barra" aria-hidden="true">
 					<div class="barra-preenchida" id="barra"></div>
 				</div><!--barra-->
-				<p class="placar-texto" id="placar-texto" aria-live="polite">recursos de PWA detectados neste navegador</p>
+				<p class="placar-texto" id="placar-texto">verificações de recursos de PWA</p>
 			</div><!--resumo-placar-->
 			<div class="acoes">
 				<button class="botao" id="comparar" type="button">Comparar com outro aparelho</button>
@@ -76,6 +76,7 @@
 				<h3>O que muda para o produto</h3>
 				<ul class="impacto-lista" id="comparacao-impacto"></ul>
 			</div><!--comparacao-impacto-->
+			<p class="comparacao-nota">O resultado do outro aparelho vem do link e pode ter sido alterado por quem o enviou.</p>
 		</section><!--comparacao-->
 
 		<section class="impacto" aria-labelledby="impacto-titulo">

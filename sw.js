@@ -3,7 +3,7 @@
 // a ativação apaga o cache antigo e a página recarrega uma vez sozinha (js/app.js).
 // Autor: Pedro Farias
 
-const CACHE_APP = "compatia-check-v3";
+const CACHE_APP = "compatia-check-v4";
 const ARQUIVOS = [
 	"./",
 	"./index.html",
@@ -14,7 +14,8 @@ const ARQUIVOS = [
 	"./icons/icon.svg",
 	"./icons/icon-192.png",
 	"./icons/icon-512.png",
-	"./icons/icon-maskable-512.png"
+	"./icons/icon-maskable-512.png",
+	"./icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", function (evento) {
@@ -63,6 +64,8 @@ self.addEventListener("fetch", function (evento) {
 					// não guarda erro, redirecionamento nem resposta de outra origem
 					if (resposta.ok && !resposta.redirected && resposta.type === "basic") {
 						return cache.put(chave, resposta.clone()).then(function () {
+							return resposta;
+						}, function () {
 							return resposta;
 						});
 					}

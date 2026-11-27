@@ -208,13 +208,7 @@
 		const barra = el("barra");
 		barra.style.width = Math.round(proporcao * 100) + "%";
 		barra.className = "barra-preenchida " + (proporcao >= 0.85 ? "nivel-alto" : proporcao >= 0.55 ? "nivel-medio" : "nivel-baixo");
-		let nivel = "suporte limitado a PWAs";
-		if (proporcao >= 0.85) {
-			nivel = "suporte amplo a PWAs";
-		} else if (proporcao >= 0.55) {
-			nivel = "suporte com lacunas";
-		}
-		el("placar-texto").textContent = "recursos de PWA detectados neste navegador · " + nivel;
+		el("placar-texto").textContent = "verificações de recursos de PWA deram positivo neste navegador";
 
 		CATEGORIAS.forEach(function (categoria) {
 			const daCategoria = VERIFICACOES.filter(function (verificacao) {
@@ -332,7 +326,7 @@
 				resultados[verificacao.id] = dados.r[indice] === "1";
 			});
 			// tira caracteres de controle e de direção de texto, que poderiam embaralhar a exibição
-			const nome = typeof dados.a === "string" ? dados.a.replace(/[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g, "").trim().slice(0, 60) : "";
+			const nome = typeof dados.a === "string" ? dados.a.replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "").trim().slice(0, 60) : "";
 			const data = typeof dados.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dados.d) ? dados.d.split("-").reverse().join("/") : "";
 			return {
 				nome: nome || "Outro aparelho",
@@ -372,7 +366,7 @@
 		}
 		el("tabela-comparacao").hidden = false;
 		el("coluna-este").textContent = estado.aparelho.nome + (estado.aparelho.instalado ? " (app instalado)" : "");
-		el("coluna-outro").textContent = "Recebido: " + outro.nome + (outro.instalado ? " (app instalado)" : "") + (outro.data ? ", " + outro.data : "");
+		el("coluna-outro").textContent = "Recebido pelo link: " + outro.nome + (outro.instalado ? " (app instalado)" : "") + (outro.data ? ", " + outro.data : "");
 
 		let diferencas = 0;
 		VERIFICACOES.forEach(function (verificacao) {
@@ -527,6 +521,9 @@
 				mostrarPlacar();
 				mostrarImpacto();
 				mostrarComparacao(false);
+				if (!el("painel-link").hidden) {
+					el("link-relatorio").value = montarLink();
+				}
 			}
 		});
 	}

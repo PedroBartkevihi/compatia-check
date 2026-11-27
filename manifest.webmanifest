@@ -1,7 +1,7 @@
 {
     "name": "COMPATIA Check",
     "short_name": "COMPATIA",
-    "description": "Verifica quais recursos de Progressive Web App funcionam neste navegador e compara aparelhos.",
+    "description": "Detecta quais recursos de Progressive Web App este navegador oferece e compara aparelhos.",
     "lang": "pt-BR",
     "id": "./",
     "start_url": "./",

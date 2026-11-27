@@ -275,8 +275,14 @@ main.container{
     outline-offset: 2px;
 }
 
-.comparacao h2:focus{
+.comparacao h2:focus:not(:focus-visible){
     outline: none;
+}
+
+.comparacao-nota{
+    margin: 16px 0 0;
+    font-size: 0.85rem;
+    color: var(--texto-suave);
 }
 
 .painel-link-linha input{

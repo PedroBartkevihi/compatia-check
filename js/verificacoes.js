@@ -68,6 +68,18 @@ async function verificarOffline() {
 	if (!registro.active) {
 		return false;
 	}
+	// a página precisa estar sob o controle do service worker (na primeira visita, isso vem logo após a ativação)
+	if (!navigator.serviceWorker.controller) {
+		await Promise.race([
+			new Promise(function (resolver) {
+				navigator.serviceWorker.addEventListener("controllerchange", resolver, { once: true });
+			}),
+			esperar(3000)
+		]);
+	}
+	if (!navigator.serviceWorker.controller) {
+		return false;
+	}
 	for (const arquivo of ARQUIVOS_ESSENCIAIS) {
 		if (!(await caches.match(arquivo))) {
 			return false;
@@ -92,9 +104,9 @@ const VERIFICACOES = [
 	{
 		id: "contexto-seguro",
 		categoria: "base",
-		nome: "Contexto seguro (HTTPS)",
-		descricao: "Pré-requisito do service worker, do push e da instalação.",
-		impacto: "Sem HTTPS, o service worker não roda: nada de modo offline, push ou instalação.",
+		nome: "Contexto seguro",
+		descricao: "HTTPS (ou localhost, em desenvolvimento): pré-requisito do service worker, do push e da instalação.",
+		impacto: "Fora de um contexto seguro, o service worker não roda: nada de modo offline, push ou instalação.",
 		testar: function () {
 			return window.isSecureContext === true;
 		}
@@ -206,7 +218,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Sincronização em segundo plano",
 		descricao: "Envia o que foi feito offline quando a internet volta, mesmo com o app fechado.",
-		impacto: "Sem esse mecanismo, o que o usuário fez offline é enviado quando ele volta a abrir o app.",
+		impacto: "Sem esse mecanismo, o envio do que foi feito offline não acontece com o app fechado.",
 		testar: function () {
 			return "SyncManager" in window;
 		}
@@ -226,7 +238,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Downloads em segundo plano",
 		descricao: "Baixa arquivos grandes mesmo se o app for fechado.",
-		impacto: "Sem esse mecanismo, um download grande para se o usuário fechar o app.",
+		impacto: "Sem esse mecanismo, o app não consegue continuar um download grande depois de fechado.",
 		testar: function () {
 			return "BackgroundFetchManager" in window;
 		}
