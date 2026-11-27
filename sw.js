@@ -1,8 +1,9 @@
 // sw.js — service worker do COMPATIA Check: guarda os arquivos do app no cache para que ele abra sem internet.
-// Ao mudar qualquer arquivo da lista, troque o nome do cache (também em js/verificacoes.js, CACHE_APP).
+// A cada versão nova do app, troque o nome do cache (CACHE_APP): a instalação guarda tudo de novo,
+// a ativação apaga o cache antigo e a página recarrega uma vez sozinha (js/app.js).
 // Autor: Pedro Farias
 
-const CACHE_APP = "compatia-check-v2";
+const CACHE_APP = "compatia-check-v3";
 const ARQUIVOS = [
 	"./",
 	"./index.html",
@@ -47,16 +48,23 @@ self.addEventListener("activate", function (evento) {
 // sem cache, vai à rede; sem rede, a navegação cai na página inicial guardada.
 self.addEventListener("fetch", function (evento) {
 	const pedido = evento.request;
-	if (pedido.method !== "GET" || new URL(pedido.url).origin !== self.location.origin) {
+	const endereco = new URL(pedido.url);
+	if (pedido.method !== "GET" || endereco.origin !== self.location.origin) {
 		return;
 	}
+	// uma entrada por arquivo, sem a parte "?..." do endereço
+	endereco.search = "";
+	const chave = endereco.href;
 	evento.respondWith(
 		caches.open(CACHE_APP).then(function (cache) {
 			return cache.match(pedido, { ignoreSearch: true }).then(function (guardado) {
 				// "no-cache" confere com o servidor antes de usar a cópia do navegador
 				const daRede = fetch(pedido, { cache: "no-cache" }).then(function (resposta) {
-					if (resposta.ok) {
-						cache.put(pedido, resposta.clone());
+					// não guarda erro, redirecionamento nem resposta de outra origem
+					if (resposta.ok && !resposta.redirected && resposta.type === "basic") {
+						return cache.put(chave, resposta.clone()).then(function () {
+							return resposta;
+						});
 					}
 					return resposta;
 				}).catch(function () {
@@ -71,7 +79,9 @@ self.addEventListener("fetch", function (evento) {
 						return resposta;
 					}
 					if (pedido.mode === "navigate") {
-						return cache.match("./index.html");
+						return cache.match("./index.html").then(function (pagina) {
+							return pagina || Response.error();
+						});
 					}
 					return Response.error();
 				});

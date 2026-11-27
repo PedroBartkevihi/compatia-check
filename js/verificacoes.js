@@ -1,10 +1,18 @@
 // verificacoes.js — recursos de PWA verificados pelo COMPATIA Check.
 // Cada verificação confere se a API existe neste navegador (detecção de recursos), sem pedir permissão ao usuário.
+// Detectar a API não prova que o recurso funciona: isso exige testar o comportamento.
 // A ordem da lista entra no link de comparação: ao mudar a lista, aumente VERSAO_VERIFICACOES.
 // Autor: Pedro Farias
 
 const VERSAO_VERIFICACOES = 1;
-const CACHE_APP = "compatia-check-v2";
+
+// o app.js guarda aqui a promessa do registro do service worker
+const estadoSW = {
+	registro: null
+};
+
+// arquivos sem os quais o app não abre offline
+const ARQUIVOS_ESSENCIAIS = ["./index.html", "./css/style.css", "./js/verificacoes.js", "./js/app.js"];
 
 const CATEGORIAS = [
 	{
@@ -34,7 +42,7 @@ const CATEGORIAS = [
 	}
 ];
 
-const AVISO_IOS = "No iPhone e no iPad, só existe na PWA adicionada à Tela de Início (iOS 16.4 ou superior).";
+const AVISO_IOS = "No iPhone e no iPad (iOS e iPadOS 16.4 ou superior), só existe na PWA adicionada à Tela de Início e depende da permissão do usuário.";
 
 function esperar(ms) {
 	return new Promise(function (resolver) {
@@ -42,18 +50,30 @@ function esperar(ms) {
 	});
 }
 
-// O app está pronto para offline quando o service worker terminou de instalar e a página inicial está no cache.
+// Pronto para offline: o service worker deste app está ativo e os arquivos essenciais estão no cache.
+// Se o registro falhou, responde na hora; se a instalação ainda não terminou, o app.js confere de novo depois.
 async function verificarOffline() {
-	if (!("serviceWorker" in navigator) || !("caches" in window) || !window.isSecureContext) {
+	if (!("serviceWorker" in navigator) || !("caches" in window) || !window.isSecureContext || !estadoSW.registro) {
 		return false;
 	}
-	await Promise.race([navigator.serviceWorker.ready, esperar(6000)]);
-	if (!(await caches.has(CACHE_APP))) {
+	const registro = await estadoSW.registro.catch(function () {
+		return null;
+	});
+	if (!registro) {
 		return false;
 	}
-	const cache = await caches.open(CACHE_APP);
-	const pagina = await cache.match("./index.html");
-	return Boolean(pagina);
+	if (!registro.active) {
+		await Promise.race([navigator.serviceWorker.ready, esperar(6000)]);
+	}
+	if (!registro.active) {
+		return false;
+	}
+	for (const arquivo of ARQUIVOS_ESSENCIAIS) {
+		if (!(await caches.match(arquivo))) {
+			return false;
+		}
+	}
+	return true;
 }
 
 function verificarCompartilharArquivos() {
@@ -84,7 +104,7 @@ const VERIFICACOES = [
 		categoria: "base",
 		nome: "Service Worker",
 		descricao: "Script em segundo plano que controla a rede e permite o modo offline.",
-		impacto: "Sem service worker, não há modo offline nem push: a PWA vira um site comum.",
+		impacto: "Sem service worker, não há modo offline nem push: a PWA funciona como um site comum.",
 		testar: function () {
 			return "serviceWorker" in navigator;
 		}
@@ -103,8 +123,8 @@ const VERIFICACOES = [
 		id: "offline",
 		categoria: "base",
 		nome: "Pronto para offline",
-		descricao: "Este app já está guardado no aparelho e abre sem internet.",
-		impacto: "Este app ainda não ficou guardado para abrir sem internet neste aparelho.",
+		descricao: "O service worker deste app está ativo e os arquivos essenciais estão guardados no aparelho.",
+		impacto: "O COMPATIA Check ainda não ficou guardado para abrir sem internet no aparelho.",
 		testar: verificarOffline
 	},
 	{
@@ -112,7 +132,7 @@ const VERIFICACOES = [
 		categoria: "base",
 		nome: "IndexedDB",
 		descricao: "Banco de dados local para guardar o que o usuário faz offline.",
-		impacto: "Sem IndexedDB, o que o usuário digita offline pode se perder.",
+		impacto: "Sem IndexedDB, o app perde o banco local para guardar o que o usuário faz offline.",
 		testar: function () {
 			return "indexedDB" in window;
 		}
@@ -122,7 +142,7 @@ const VERIFICACOES = [
 		categoria: "base",
 		nome: "Armazenamento persistente",
 		descricao: "Pede ao navegador que não apague os dados do app quando faltar espaço.",
-		impacto: "O navegador pode apagar os dados do app quando faltar espaço.",
+		impacto: "O app não pode pedir que o navegador preserve os dados dele quando faltar espaço.",
 		testar: function () {
 			return Boolean(navigator.storage && "persist" in navigator.storage);
 		}
@@ -131,9 +151,9 @@ const VERIFICACOES = [
 		id: "convite-instalacao",
 		categoria: "instalacao",
 		nome: "Convite de instalação",
-		descricao: "O próprio app pode mostrar um botão Instalar (evento beforeinstallprompt).",
-		nota: "No Safari, a instalação é manual, pelo botão Compartilhar ou pelo menu do navegador.",
-		impacto: "O app não pode oferecer um botão Instalar: o usuário precisa achar a opção no menu do navegador.",
+		descricao: "O navegador permite que o app mostre o próprio botão Instalar (evento beforeinstallprompt).",
+		nota: "No Safari e no Firefox para Android, a instalação é feita pelo menu do navegador.",
+		impacto: "O app não pode oferecer o próprio botão Instalar: o usuário precisa achar a opção no menu do navegador.",
 		testar: function () {
 			return "onbeforeinstallprompt" in window || "BeforeInstallPromptEvent" in window;
 		}
@@ -142,8 +162,8 @@ const VERIFICACOES = [
 		id: "abrir-arquivos",
 		categoria: "instalacao",
 		nome: "Abrir arquivos pelo app",
-		descricao: "O app instalado aparece como opção para abrir arquivos do computador.",
-		impacto: "O app instalado não pode ser associado a tipos de arquivo.",
+		descricao: "API launchQueue: o app instalado pode receber arquivos abertos pelo sistema (exige file_handlers no manifesto).",
+		impacto: "O app instalado não recebe, por esse mecanismo, arquivos abertos pelo sistema.",
 		testar: function () {
 			return "launchQueue" in window;
 		}
@@ -154,7 +174,7 @@ const VERIFICACOES = [
 		nome: "Push API",
 		descricao: "Recebe mensagens do servidor mesmo com o app fechado.",
 		nota: AVISO_IOS,
-		impacto: "Campanhas e alertas por push não chegam a este aparelho.",
+		impacto: "Campanhas e alertas por push não chegam ao aparelho.",
 		testar: function () {
 			return "PushManager" in window;
 		}
@@ -175,6 +195,7 @@ const VERIFICACOES = [
 		categoria: "reengajamento",
 		nome: "Contador no ícone",
 		descricao: "Mostra um número no ícone do app instalado, como mensagens não lidas.",
+		nota: AVISO_IOS,
 		impacto: "O ícone do app não mostra o contador de pendências.",
 		testar: function () {
 			return "setAppBadge" in navigator;
@@ -185,7 +206,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Sincronização em segundo plano",
 		descricao: "Envia o que foi feito offline quando a internet volta, mesmo com o app fechado.",
-		impacto: "O que o usuário fez offline só é enviado com o app aberto.",
+		impacto: "Sem esse mecanismo, o que o usuário fez offline é enviado quando ele volta a abrir o app.",
 		testar: function () {
 			return "SyncManager" in window;
 		}
@@ -195,7 +216,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Sincronização periódica",
 		descricao: "Atualiza o conteúdo de tempos em tempos no app instalado.",
-		impacto: "O conteúdo só se atualiza quando o usuário abre o app.",
+		impacto: "Sem esse mecanismo, o app não se atualiza sozinho em intervalos.",
 		testar: function () {
 			return "PeriodicSyncManager" in window;
 		}
@@ -205,7 +226,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Downloads em segundo plano",
 		descricao: "Baixa arquivos grandes mesmo se o app for fechado.",
-		impacto: "Downloads grandes param se o usuário fechar o app.",
+		impacto: "Sem esse mecanismo, um download grande para se o usuário fechar o app.",
 		testar: function () {
 			return "BackgroundFetchManager" in window;
 		}

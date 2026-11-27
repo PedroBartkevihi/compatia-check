@@ -28,9 +28,10 @@ Depois, abra http://localhost:8090.
 - `css/style.css` — estilos.
 - `js/verificacoes.js` — a lista dos recursos verificados. A ordem entra no link de comparação: ao mudar a lista, aumente `VERSAO_VERIFICACOES`.
 - `js/app.js` — interface, placar, comparação, instalação e impressão.
-- `sw.js` — service worker: guarda os arquivos no cache e os atualiza em segundo plano, sempre conferindo com o servidor (o GitHub Pages manda o navegador guardar os arquivos por 10 minutos). O nome do cache (`CACHE_APP`) é o mesmo em `sw.js` e em `js/verificacoes.js`: troque nos dois a cada versão. Quando uma versão nova assume, a página recarrega uma vez sozinha.
+- `sw.js` — service worker: guarda os arquivos no cache e os atualiza em segundo plano, sempre conferindo com o servidor (o GitHub Pages manda o navegador guardar os arquivos por 10 minutos). A cada versão, troque o nome do cache (`CACHE_APP`, em `sw.js`); quando a versão nova assume, a página recarrega uma vez sozinha. A verificação "Pronto para offline" confere o service worker ativo e os arquivos essenciais em qualquer cache do app.
 - `manifest.webmanifest` e `icons/` — manifesto e ícones (os PNG são gerados a partir dos SVG).
 
 ## Limites do protótipo
-- Detectar uma API não garante que ela funcione igual em todo aparelho; testes de comportamento (por exemplo, receber um push de verdade) ficam para a versão completa.
+- O Check diagnostica o navegador em que é aberto, não a PWA de um cliente. Detectar uma API não garante que ela funcione igual em todo aparelho (permissões, configuração e implementação contam); testes de comportamento (por exemplo, receber um push de verdade) ficam para a versão completa.
+- Navegador, sistema e motor são estimados pelo User-Agent.
 - No iPhone e no iPad, push, notificações e contador no ícone só existem na PWA adicionada à Tela de Início; aberta numa aba do Safari, a mesma PWA mostra menos recursos.

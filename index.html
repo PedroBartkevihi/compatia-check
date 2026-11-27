@@ -38,7 +38,7 @@
 				<div class="barra" aria-hidden="true">
 					<div class="barra-preenchida" id="barra"></div>
 				</div><!--barra-->
-				<p class="placar-texto" id="placar-texto">recursos de PWA disponíveis</p>
+				<p class="placar-texto" id="placar-texto" aria-live="polite">recursos de PWA detectados neste navegador</p>
 			</div><!--resumo-placar-->
 			<div class="acoes">
 				<button class="botao" id="comparar" type="button">Comparar com outro aparelho</button>
@@ -56,17 +56,17 @@
 
 		<section class="comparacao" id="comparacao" hidden aria-labelledby="comparacao-titulo">
 			<div class="secao-cabecalho">
-				<h2 id="comparacao-titulo">Comparação entre aparelhos</h2>
+				<h2 id="comparacao-titulo" tabindex="-1">Comparação entre aparelhos</h2>
 				<button class="botao botao-secundario" id="fechar-comparacao" type="button">Fechar comparação</button>
 			</div><!--secao-cabecalho-->
 			<p class="comparacao-resumo" id="comparacao-resumo"></p>
-			<div class="tabela-rolagem">
+			<div class="tabela-rolagem" id="tabela-comparacao" tabindex="0" aria-label="Tabela da comparação">
 				<table class="tabela-comparacao">
 					<thead>
 						<tr>
 							<th scope="col">Recurso</th>
 							<th scope="col" id="coluna-este">Este aparelho</th>
-							<th scope="col" id="coluna-outro">Outro aparelho</th>
+							<th scope="col" id="coluna-outro">Relatório recebido</th>
 						</tr>
 					</thead>
 					<tbody id="comparacao-linhas"></tbody>
@@ -95,7 +95,7 @@
 
 	<footer class="rodape">
 		<div class="container">
-			<p>Protótipo da COMPATIA. A verificação roda só neste navegador, por detecção de recursos; nenhum dado é enviado a servidores.</p>
+			<p>Protótipo da COMPATIA. O diagnóstico roda só neste navegador, por detecção de recursos (a API existe?), e nenhum dado é enviado a servidores. O link de comparação leva o resultado só para quem você o enviar.</p>
 			<p>Pedro Farias, 2026</p>
 		</div><!--container-->
 	</footer><!--rodape-->

@@ -268,6 +268,17 @@ main.container{
     gap: 8px;
 }
 
+.painel-link-linha input:focus-visible,
+.tabela-rolagem:focus-visible,
+.comparacao h2:focus-visible{
+    outline: 3px solid var(--verde-agua);
+    outline-offset: 2px;
+}
+
+.comparacao h2:focus{
+    outline: none;
+}
+
 .painel-link-linha input{
     flex: 1;
     min-width: 0;

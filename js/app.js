@@ -5,6 +5,9 @@
 (function () {
 	"use strict";
 
+	const PREFIXO_LINK = "#comparar=";
+	const TAMANHO_MAXIMO_LINK = 600;
+
 	const estado = {
 		aparelho: null,
 		resultados: {},
@@ -27,6 +30,19 @@
 		return elemento;
 	}
 
+	// símbolo só visual (o leitor de tela lê apenas a palavra)
+	function preencherComSimbolo(elemento, simbolo, texto) {
+		elemento.replaceChildren();
+		const marca = criar("span", "", simbolo + " ");
+		marca.setAttribute("aria-hidden", "true");
+		elemento.appendChild(marca);
+		elemento.appendChild(document.createTextNode(texto));
+	}
+
+	function menosMovimento() {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
+
 	function mostrarAviso(texto) {
 		const aviso = el("aviso");
 		aviso.textContent = texto;
@@ -37,12 +53,13 @@
 		}, 3500);
 	}
 
-	// ---------- aparelho ----------
+	// ---------- aparelho (estimado pelo User-Agent) ----------
 
 	function identificarAparelho() {
 		const ua = navigator.userAgent;
 		const regras = [
 			[/EdgiOS\/(\d+)/, "Edge"],
+			[/EdgA\/(\d+)/, "Edge"],
 			[/Edg\/(\d+)/, "Edge"],
 			[/OPR\/(\d+)/, "Opera"],
 			[/SamsungBrowser\/(\d+)/, "Samsung Internet"],
@@ -128,8 +145,9 @@
 			const bloco = criar("article", "categoria");
 			const cabecalho = criar("div", "categoria-cabecalho");
 			cabecalho.appendChild(criar("h2", "", categoria.nome));
-			cabecalho.appendChild(criar("span", "categoria-placar", ""));
-			cabecalho.lastChild.id = "placar-" + categoria.id;
+			const placar = criar("span", "categoria-placar", "");
+			placar.id = "placar-" + categoria.id;
+			cabecalho.appendChild(placar);
 			bloco.appendChild(cabecalho);
 			bloco.appendChild(criar("p", "categoria-descricao", categoria.descricao));
 
@@ -157,9 +175,9 @@
 	function marcarResultado(verificacao, disponivel) {
 		estado.resultados[verificacao.id] = disponivel;
 		const item = el("recurso-" + verificacao.id);
-		item.classList.remove("pendente");
+		item.classList.remove("pendente", "disponivel", "indisponivel");
 		item.classList.add(disponivel ? "disponivel" : "indisponivel");
-		item.querySelector(".selo").textContent = disponivel ? "✔ Disponível" : "✘ Indisponível";
+		preencherComSimbolo(item.querySelector(".selo"), disponivel ? "✔" : "✘", disponivel ? "Detectado" : "Não detectado");
 	}
 
 	async function executarVerificacoes() {
@@ -192,11 +210,11 @@
 		barra.className = "barra-preenchida " + (proporcao >= 0.85 ? "nivel-alto" : proporcao >= 0.55 ? "nivel-medio" : "nivel-baixo");
 		let nivel = "suporte limitado a PWAs";
 		if (proporcao >= 0.85) {
-			nivel = "ótimo para PWAs";
+			nivel = "suporte amplo a PWAs";
 		} else if (proporcao >= 0.55) {
-			nivel = "bom, com lacunas";
+			nivel = "suporte com lacunas";
 		}
-		el("placar-texto").textContent = "recursos de PWA disponíveis · " + nivel;
+		el("placar-texto").textContent = "recursos de PWA detectados neste navegador · " + nivel;
 
 		CATEGORIAS.forEach(function (categoria) {
 			const daCategoria = VERIFICACOES.filter(function (verificacao) {
@@ -216,7 +234,7 @@
 			return !estado.resultados[verificacao.id];
 		});
 		if (faltando.length === 0) {
-			lista.appendChild(criar("li", "impacto-ok", "Nenhuma limitação nos " + VERIFICACOES.length + " recursos verificados."));
+			lista.appendChild(criar("li", "impacto-ok", "Os " + VERIFICACOES.length + " recursos verificados foram detectados neste navegador."));
 			return;
 		}
 		faltando.forEach(function (verificacao) {
@@ -231,9 +249,9 @@
 		const lista = el("detalhes-lista");
 		lista.replaceChildren();
 		const linhas = [
-			["Navegador", estado.aparelho.versao ? estado.aparelho.navegador + " " + estado.aparelho.versao : estado.aparelho.navegador],
-			["Sistema", estado.aparelho.sistema],
-			["Motor de renderização", estado.aparelho.motor],
+			["Navegador (estimado)", estado.aparelho.versao ? estado.aparelho.navegador + " " + estado.aparelho.versao : estado.aparelho.navegador],
+			["Sistema (estimado)", estado.aparelho.sistema],
+			["Motor de renderização (estimado)", estado.aparelho.motor],
 			["Modo de exibição", estado.aparelho.instalado ? "app instalado (standalone)" : "aba do navegador"],
 			["Data da verificação", new Date().toLocaleDateString("pt-BR")]
 		];
@@ -242,10 +260,10 @@
 				const estimativa = await navigator.storage.estimate();
 				if (estimativa.quota) {
 					const gigas = estimativa.quota / (1024 * 1024 * 1024);
-					linhas.push(["Espaço disponível para o app", gigas >= 1 ? "cerca de " + gigas.toFixed(1).replace(".", ",") + " GB" : "cerca de " + Math.round(gigas * 1024) + " MB"]);
+					linhas.push(["Limite estimado de armazenamento do site", gigas >= 1 ? "cerca de " + gigas.toFixed(1).replace(".", ",") + " GB" : "cerca de " + Math.round(gigas * 1024) + " MB"]);
 				}
 			} catch (erro) {
-				// sem estimativa de espaço neste navegador
+				// sem estimativa de armazenamento neste navegador
 			}
 		}
 		linhas.forEach(function (linha) {
@@ -277,37 +295,49 @@
 		return new TextDecoder().decode(bytes);
 	}
 
+	function dataLocal() {
+		const hoje = new Date();
+		return hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, "0") + "-" + String(hoje.getDate()).padStart(2, "0");
+	}
+
 	function montarLink() {
 		const dados = {
 			v: VERSAO_VERIFICACOES,
 			a: estado.aparelho.nome,
-			d: new Date().toISOString().slice(0, 10),
+			d: dataLocal(),
+			m: estado.aparelho.instalado ? 1 : 0,
 			r: VERIFICACOES.map(function (verificacao) {
 				return estado.resultados[verificacao.id] ? "1" : "0";
 			}).join("")
 		};
-		return location.origin + location.pathname + "#comparar=" + paraBase64Url(JSON.stringify(dados));
+		return location.origin + location.pathname + PREFIXO_LINK + paraBase64Url(JSON.stringify(dados));
 	}
 
-	// O link vem de outra pessoa: valida tudo e só usa textContent ao mostrar.
+	// O link vem de outra pessoa e pode ter sido editado: valida tudo e só usa textContent ao mostrar.
 	function lerRelatorioDoLink() {
-		const achado = location.hash.match(/^#comparar=([A-Za-z0-9_-]+)$/);
-		if (!achado) {
+		if (location.hash.indexOf(PREFIXO_LINK) !== 0) {
 			return null;
 		}
+		const codigo = location.hash.slice(PREFIXO_LINK.length);
+		if (codigo.length === 0 || codigo.length > TAMANHO_MAXIMO_LINK || !/^[A-Za-z0-9_-]+$/.test(codigo)) {
+			return { invalido: true };
+		}
 		try {
-			const dados = JSON.parse(deBase64Url(achado[1]));
-			if (dados.v !== VERSAO_VERIFICACOES || typeof dados.r !== "string" || !/^[01]+$/.test(dados.r) || dados.r.length !== VERIFICACOES.length) {
+			const dados = JSON.parse(deBase64Url(codigo));
+			if (!dados || typeof dados !== "object" || dados.v !== VERSAO_VERIFICACOES || typeof dados.r !== "string" || !/^[01]+$/.test(dados.r) || dados.r.length !== VERIFICACOES.length) {
 				return { invalido: true };
 			}
 			const resultados = {};
 			VERIFICACOES.forEach(function (verificacao, indice) {
 				resultados[verificacao.id] = dados.r[indice] === "1";
 			});
-			const data = /^\d{4}-\d{2}-\d{2}$/.test(dados.d) ? dados.d.split("-").reverse().join("/") : "";
+			// tira caracteres de controle e de direção de texto, que poderiam embaralhar a exibição
+			const nome = typeof dados.a === "string" ? dados.a.replace(/[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g, "").trim().slice(0, 60) : "";
+			const data = typeof dados.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dados.d) ? dados.d.split("-").reverse().join("/") : "";
 			return {
-				nome: String(dados.a || "Outro aparelho").slice(0, 60),
+				nome: nome || "Outro aparelho",
 				data: data,
+				instalado: dados.m === 1,
 				resultados: resultados
 			};
 		} catch (erro) {
@@ -316,11 +346,12 @@
 	}
 
 	function celulaResultado(disponivel) {
-		const celula = criar("td", disponivel ? "celula-sim" : "celula-nao", disponivel ? "✔ Sim" : "✘ Não");
+		const celula = criar("td", disponivel ? "celula-sim" : "celula-nao");
+		preencherComSimbolo(celula, disponivel ? "✔" : "✘", disponivel ? "Sim" : "Não");
 		return celula;
 	}
 
-	function mostrarComparacao() {
+	function mostrarComparacao(levarAte) {
 		const secao = el("comparacao");
 		const outro = lerRelatorioDoLink();
 		if (!outro) {
@@ -334,28 +365,32 @@
 		impactos.replaceChildren();
 		el("comparacao-impacto-bloco").hidden = true;
 		if (outro.invalido) {
-			el("comparacao-resumo").textContent = "Este link de comparação é de outra versão do COMPATIA Check ou está incompleto. Gere um novo link no outro aparelho.";
+			el("tabela-comparacao").hidden = true;
+			el("comparacao-resumo").textContent = "Este link de comparação está incompleto, foi alterado ou é de outra versão do COMPATIA Check. Gere um novo link no outro aparelho.";
+			levarAteComparacao(levarAte);
 			return;
 		}
-		el("coluna-este").textContent = estado.aparelho.nome;
-		el("coluna-outro").textContent = outro.nome + (outro.data ? " (" + outro.data + ")" : "");
+		el("tabela-comparacao").hidden = false;
+		el("coluna-este").textContent = estado.aparelho.nome + (estado.aparelho.instalado ? " (app instalado)" : "");
+		el("coluna-outro").textContent = "Recebido: " + outro.nome + (outro.instalado ? " (app instalado)" : "") + (outro.data ? ", " + outro.data : "");
 
 		let diferencas = 0;
 		VERIFICACOES.forEach(function (verificacao) {
 			const aqui = Boolean(estado.resultados[verificacao.id]);
 			const la = outro.resultados[verificacao.id];
 			const linha = criar("tr", aqui !== la ? "linha-diferente" : "");
-			linha.appendChild(criar("th", "", verificacao.nome));
-			linha.lastChild.scope = "row";
+			const cabecalho = criar("th", "", verificacao.nome);
+			cabecalho.scope = "row";
+			linha.appendChild(cabecalho);
 			linha.appendChild(celulaResultado(aqui));
 			linha.appendChild(celulaResultado(la));
 			linhas.appendChild(linha);
 			if (aqui !== la) {
 				diferencas += 1;
-				// o impacto vale para o aparelho que não tem o recurso, seja este ou o outro
+				// o impacto vale para o aparelho em que o recurso não foi detectado, seja este ou o outro
 				const semRecurso = aqui ? outro.nome : estado.aparelho.nome;
 				const item = criar("li", "");
-				item.appendChild(criar("strong", "", verificacao.nome + ", falta em " + semRecurso + ": "));
+				item.appendChild(criar("strong", "", verificacao.nome + ", não detectado em " + semRecurso + ": "));
 				item.appendChild(document.createTextNode(verificacao.impacto));
 				impactos.appendChild(item);
 			}
@@ -365,12 +400,20 @@
 		const resumo = el("comparacao-resumo");
 		resumo.replaceChildren();
 		if (diferencas === 0) {
-			resumo.textContent = "Os dois aparelhos têm o mesmo resultado nos " + VERIFICACOES.length + " recursos verificados.";
+			resumo.textContent = "As " + VERIFICACOES.length + " verificações deram o mesmo resultado nos dois aparelhos.";
 		} else {
-			resumo.appendChild(criar("strong", "", diferencas + " de " + VERIFICACOES.length + " recursos"));
-			resumo.appendChild(document.createTextNode(" funcionam de um jeito num aparelho e de outro no segundo. A mesma PWA entrega experiências diferentes: é a fragmentação que a COMPATIA mede."));
+			resumo.appendChild(criar("strong", "", diferencas + " de " + VERIFICACOES.length + " verificações"));
+			resumo.appendChild(document.createTextNode(" deram resultados diferentes nos dois aparelhos. A mesma PWA pode entregar experiências diferentes: é a fragmentação que a COMPATIA mede."));
 		}
-		secao.scrollIntoView({ behavior: "smooth", block: "start" });
+		levarAteComparacao(levarAte);
+	}
+
+	function levarAteComparacao(levarAte) {
+		if (!levarAte) {
+			return;
+		}
+		el("comparacao").scrollIntoView({ behavior: menosMovimento() ? "auto" : "smooth", block: "start" });
+		el("comparacao-titulo").focus({ preventScroll: true });
 	}
 
 	// ---------- ações ----------
@@ -417,6 +460,7 @@
 	function fecharComparacao() {
 		history.replaceState(null, "", location.pathname + location.search);
 		el("comparacao").hidden = true;
+		el("comparar").focus();
 	}
 
 	function prepararInstalacao() {
@@ -425,14 +469,21 @@
 			evento.preventDefault();
 			estado.eventoInstalacao = evento;
 			botao.hidden = false;
+			botao.disabled = false;
 		});
 		botao.addEventListener("click", async function () {
 			if (!estado.eventoInstalacao) {
 				return;
 			}
-			estado.eventoInstalacao.prompt();
-			await estado.eventoInstalacao.userChoice;
+			botao.disabled = true;
+			const evento = estado.eventoInstalacao;
 			estado.eventoInstalacao = null;
+			try {
+				await evento.prompt();
+				await evento.userChoice;
+			} catch (erro) {
+				// o navegador recusou mostrar o convite
+			}
 			botao.hidden = true;
 		});
 		window.addEventListener("appinstalled", function () {
@@ -441,22 +492,43 @@
 	}
 
 	function registrarServiceWorker() {
-		if ("serviceWorker" in navigator && window.isSecureContext) {
-			// quando uma versão nova do app assume o controle, recarrega uma vez para mostrá-la
-			// (só se já havia uma versão antiga controlando a página; na primeira visita, não)
-			if (navigator.serviceWorker.controller) {
-				let recarregou = false;
-				navigator.serviceWorker.addEventListener("controllerchange", function () {
-					if (!recarregou) {
-						recarregou = true;
-						location.reload();
-					}
-				});
-			}
-			navigator.serviceWorker.register("./sw.js").catch(function () {
-				// sem service worker, a verificação "Pronto para offline" dá indisponível
+		if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+			return;
+		}
+		// quando uma versão nova do app assume o controle, recarrega uma vez para mostrá-la
+		// (só se uma versão antiga já controlava a página; na primeira visita, não)
+		if (navigator.serviceWorker.controller) {
+			let recarregou = false;
+			navigator.serviceWorker.addEventListener("controllerchange", function () {
+				if (!recarregou) {
+					recarregou = true;
+					location.reload();
+				}
 			});
 		}
+		// updateViaCache "none": a busca por uma versão nova do sw.js ignora o cache HTTP
+		estadoSW.registro = navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+		estadoSW.registro.catch(function () {
+			// sem service worker, a verificação "Pronto para offline" dá não detectado
+		});
+	}
+
+	// Numa primeira visita lenta, a instalação pode terminar depois da verificação: confere de novo.
+	function reverificarOffline() {
+		if (estado.resultados.offline || !estadoSW.registro) {
+			return;
+		}
+		navigator.serviceWorker.ready.then(async function () {
+			const verificacao = VERIFICACOES.find(function (item) {
+				return item.id === "offline";
+			});
+			if (await verificarOffline()) {
+				marcarResultado(verificacao, true);
+				mostrarPlacar();
+				mostrarImpacto();
+				mostrarComparacao(false);
+			}
+		});
 	}
 
 	// ---------- início ----------
@@ -477,14 +549,15 @@
 		el("fechar-comparacao").addEventListener("click", fecharComparacao);
 		window.addEventListener("hashchange", function () {
 			if (estado.concluido) {
-				mostrarComparacao();
+				mostrarComparacao(true);
 			}
 		});
 
 		await executarVerificacoes();
 		mostrarPlacar();
 		mostrarImpacto();
-		mostrarComparacao();
+		mostrarComparacao(true);
+		reverificarOffline();
 		await mostrarDetalhes();
 	}
 
