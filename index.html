@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="COMPATIA Check: verifica quais recursos de Progressive Web App funcionam neste navegador e compara aparelhos.">
+	<meta name="author" content="Pedro Farias">
+	<meta name="theme-color" content="#13315c">
+	<title>COMPATIA Check — compatibilidade de PWAs</title>
+	<link rel="manifest" href="manifest.webmanifest">
+	<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icons/icon-192.png">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<header class="topo">
+		<div class="container topo-conteudo">
+			<div class="marca">
+				<img src="icons/icon.svg" alt="" width="44" height="44">
+				<div class="marca-texto">
+					<strong>COMPATIA Check</strong>
+					<span>Raio-x de compatibilidade de PWAs</span>
+				</div><!--marca-texto-->
+			</div><!--marca-->
+			<button class="botao botao-claro" id="instalar" type="button" hidden>Instalar app</button>
+		</div><!--topo-conteudo-->
+	</header><!--topo-->
+
+	<main class="container">
+		<section class="resumo" id="resumo" aria-labelledby="aparelho-nome">
+			<div class="resumo-aparelho">
+				<span class="rotulo">Este aparelho</span>
+				<h1 id="aparelho-nome">Detectando o navegador…</h1>
+				<ul class="etiquetas" id="aparelho-etiquetas"></ul>
+			</div><!--resumo-aparelho-->
+			<div class="resumo-placar">
+				<p class="placar"><span id="placar-valor">–</span> <span class="placar-total">de <span id="placar-total">–</span></span></p>
+				<div class="barra" aria-hidden="true">
+					<div class="barra-preenchida" id="barra"></div>
+				</div><!--barra-->
+				<p class="placar-texto" id="placar-texto">recursos de PWA disponíveis</p>
+			</div><!--resumo-placar-->
+			<div class="acoes">
+				<button class="botao" id="comparar" type="button">Comparar com outro aparelho</button>
+				<button class="botao botao-secundario" id="imprimir" type="button">Imprimir relatório</button>
+			</div><!--acoes-->
+			<div class="painel-link" id="painel-link" hidden>
+				<label for="link-relatorio">Abra este link no outro aparelho para ver a comparação:</label>
+				<div class="painel-link-linha">
+					<input type="text" id="link-relatorio" readonly>
+					<button class="botao" id="copiar-link" type="button">Copiar</button>
+					<button class="botao botao-secundario" id="compartilhar-link" type="button" hidden>Compartilhar</button>
+				</div><!--painel-link-linha-->
+			</div><!--painel-link-->
+		</section><!--resumo-->
+
+		<section class="comparacao" id="comparacao" hidden aria-labelledby="comparacao-titulo">
+			<div class="secao-cabecalho">
+				<h2 id="comparacao-titulo">Comparação entre aparelhos</h2>
+				<button class="botao botao-secundario" id="fechar-comparacao" type="button">Fechar comparação</button>
+			</div><!--secao-cabecalho-->
+			<p class="comparacao-resumo" id="comparacao-resumo"></p>
+			<div class="tabela-rolagem">
+				<table class="tabela-comparacao">
+					<thead>
+						<tr>
+							<th scope="col">Recurso</th>
+							<th scope="col" id="coluna-este">Este aparelho</th>
+							<th scope="col" id="coluna-outro">Outro aparelho</th>
+						</tr>
+					</thead>
+					<tbody id="comparacao-linhas"></tbody>
+				</table>
+			</div><!--tabela-rolagem-->
+		</section><!--comparacao-->
+
+		<section class="impacto" aria-labelledby="impacto-titulo">
+			<h2 id="impacto-titulo">O que isso significa para o seu produto</h2>
+			<ul class="impacto-lista" id="impacto-lista">
+				<li>Verificando os recursos…</li>
+			</ul><!--impacto-lista-->
+		</section><!--impacto-->
+
+		<section class="recursos" id="recursos" aria-label="Recursos verificados"></section><!--recursos-->
+
+		<section class="detalhes" aria-labelledby="detalhes-titulo">
+			<h2 id="detalhes-titulo">Detalhes do ambiente</h2>
+			<dl class="detalhes-lista" id="detalhes-lista"></dl>
+		</section><!--detalhes-->
+	</main><!--container-->
+
+	<footer class="rodape">
+		<div class="container">
+			<p>Protótipo da COMPATIA. A verificação roda só neste navegador, por detecção de recursos; nenhum dado é enviado a servidores.</p>
+			<p>Pedro Farias, 2026</p>
+		</div><!--container-->
+	</footer><!--rodape-->
+
+	<div class="aviso" id="aviso" role="status" aria-live="polite"></div><!--aviso-->
+
+	<script src="js/verificacoes.js"></script>
+	<script src="js/app.js"></script>
+</body>
+</html>
