@@ -60,9 +60,10 @@ function nomeDoCacheDoControlador() {
 			resolver(evento.data && typeof evento.data.cache === "string" ? evento.data.cache : null);
 		};
 		navigator.serviceWorker.controller.postMessage({ tipo: "qual-cache" }, [canal.port2]);
+		// um service worker adormecido pode levar um tempo para acordar em celular lento
 		setTimeout(function () {
 			resolver(null);
-		}, 2000);
+		}, 4000);
 	});
 }
 

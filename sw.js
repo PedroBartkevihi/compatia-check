@@ -3,7 +3,7 @@
 // a ativação apaga o cache antigo e a página recarrega uma vez sozinha (js/app.js).
 // Autor: Pedro Farias
 
-const CACHE_APP = "compatia-check-v5";
+const CACHE_APP = "compatia-check-v6";
 const ARQUIVOS = [
 	"./",
 	"./index.html",
