@@ -330,6 +330,9 @@
 		secao.hidden = false;
 		const linhas = el("comparacao-linhas");
 		linhas.replaceChildren();
+		const impactos = el("comparacao-impacto");
+		impactos.replaceChildren();
+		el("comparacao-impacto-bloco").hidden = true;
 		if (outro.invalido) {
 			el("comparacao-resumo").textContent = "Este link de comparação é de outra versão do COMPATIA Check ou está incompleto. Gere um novo link no outro aparelho.";
 			return;
@@ -349,8 +352,15 @@
 			linhas.appendChild(linha);
 			if (aqui !== la) {
 				diferencas += 1;
+				// o impacto vale para o aparelho que não tem o recurso, seja este ou o outro
+				const semRecurso = aqui ? outro.nome : estado.aparelho.nome;
+				const item = criar("li", "");
+				item.appendChild(criar("strong", "", verificacao.nome + ", falta em " + semRecurso + ": "));
+				item.appendChild(document.createTextNode(verificacao.impacto));
+				impactos.appendChild(item);
 			}
 		});
+		el("comparacao-impacto-bloco").hidden = diferencas === 0;
 
 		const resumo = el("comparacao-resumo");
 		resumo.replaceChildren();

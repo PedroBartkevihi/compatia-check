@@ -363,6 +363,16 @@ main.container{
     white-space: nowrap;
 }
 
+.comparacao-impacto{
+    margin-top: 20px;
+}
+
+.comparacao-impacto h3{
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--azul-escuro);
+}
+
 .impacto-lista{
     margin: 12px 0 0;
     padding-left: 20px;
