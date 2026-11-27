@@ -3,7 +3,7 @@
 // a ativação apaga o cache antigo e a página recarrega uma vez sozinha (js/app.js).
 // Autor: Pedro Farias
 
-const CACHE_APP = "compatia-check-v4";
+const CACHE_APP = "compatia-check-v5";
 const ARQUIVOS = [
 	"./",
 	"./index.html",
@@ -29,6 +29,13 @@ self.addEventListener("install", function (evento) {
 			return self.skipWaiting();
 		})
 	);
+});
+
+// a página pergunta qual cache este service worker usa (verificação "Pronto para offline")
+self.addEventListener("message", function (evento) {
+	if (evento.data && evento.data.tipo === "qual-cache" && evento.ports[0]) {
+		evento.ports[0].postMessage({ cache: CACHE_APP });
+	}
 });
 
 self.addEventListener("activate", function (evento) {

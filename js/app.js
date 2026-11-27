@@ -207,7 +207,7 @@
 		el("placar-total").textContent = total;
 		const barra = el("barra");
 		barra.style.width = Math.round(proporcao * 100) + "%";
-		barra.className = "barra-preenchida " + (proporcao >= 0.85 ? "nivel-alto" : proporcao >= 0.55 ? "nivel-medio" : "nivel-baixo");
+		barra.className = "barra-preenchida";
 		el("placar-texto").textContent = "verificações de recursos de PWA deram positivo neste navegador";
 
 		CATEGORIAS.forEach(function (categoria) {

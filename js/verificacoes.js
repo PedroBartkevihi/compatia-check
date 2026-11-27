@@ -50,12 +50,23 @@ function esperar(ms) {
 	});
 }
 
-// Pronto para offline: o service worker deste app está ativo e os arquivos essenciais estão no cache.
-// Se o registro falhou, responde na hora; se a instalação ainda não terminou, o app.js confere de novo depois.
-async function verificarOffline() {
-	if (!("serviceWorker" in navigator) || !("caches" in window) || !window.isSecureContext || !estadoSW.registro) {
-		return false;
-	}
+// Pronto para offline: a página está sob o controle do service worker deste app, e os arquivos essenciais
+// estão no cache que esse service worker usa (durante uma troca de versão, pode haver dois caches).
+// Tudo dentro de um limite de 10 s; se a instalação terminar depois, o app.js confere de novo.
+function nomeDoCacheDoControlador() {
+	return new Promise(function (resolver) {
+		const canal = new MessageChannel();
+		canal.port1.onmessage = function (evento) {
+			resolver(evento.data && typeof evento.data.cache === "string" ? evento.data.cache : null);
+		};
+		navigator.serviceWorker.controller.postMessage({ tipo: "qual-cache" }, [canal.port2]);
+		setTimeout(function () {
+			resolver(null);
+		}, 2000);
+	});
+}
+
+async function conferirOffline() {
 	const registro = await estadoSW.registro.catch(function () {
 		return null;
 	});
@@ -63,29 +74,33 @@ async function verificarOffline() {
 		return false;
 	}
 	if (!registro.active) {
-		await Promise.race([navigator.serviceWorker.ready, esperar(6000)]);
-	}
-	if (!registro.active) {
-		return false;
-	}
-	// a página precisa estar sob o controle do service worker (na primeira visita, isso vem logo após a ativação)
-	if (!navigator.serviceWorker.controller) {
-		await Promise.race([
-			new Promise(function (resolver) {
-				navigator.serviceWorker.addEventListener("controllerchange", resolver, { once: true });
-			}),
-			esperar(3000)
-		]);
+		await navigator.serviceWorker.ready;
 	}
 	if (!navigator.serviceWorker.controller) {
+		await new Promise(function (resolver) {
+			navigator.serviceWorker.addEventListener("controllerchange", resolver, { once: true });
+		});
+	}
+	const nome = await nomeDoCacheDoControlador();
+	if (!nome || !(await caches.has(nome))) {
 		return false;
 	}
+	const cache = await caches.open(nome);
 	for (const arquivo of ARQUIVOS_ESSENCIAIS) {
-		if (!(await caches.match(arquivo))) {
+		if (!(await cache.match(arquivo))) {
 			return false;
 		}
 	}
 	return true;
+}
+
+async function verificarOffline() {
+	if (!("serviceWorker" in navigator) || !("caches" in window) || !window.isSecureContext || !estadoSW.registro) {
+		return false;
+	}
+	return Promise.race([conferirOffline(), esperar(10000).then(function () {
+		return false;
+	})]);
 }
 
 function verificarCompartilharArquivos() {
@@ -174,8 +189,8 @@ const VERIFICACOES = [
 		id: "abrir-arquivos",
 		categoria: "instalacao",
 		nome: "Abrir arquivos pelo app",
-		descricao: "API launchQueue: o app instalado pode receber arquivos abertos pelo sistema (exige file_handlers no manifesto).",
-		impacto: "O app instalado não recebe, por esse mecanismo, arquivos abertos pelo sistema.",
+		descricao: "API launchQueue, um dos requisitos para o app instalado receber arquivos abertos pelo sistema (o outro é file_handlers no manifesto).",
+		impacto: "Sem a API launchQueue, o app instalado perde esse mecanismo para receber arquivos abertos pelo sistema.",
 		testar: function () {
 			return "launchQueue" in window;
 		}
@@ -218,7 +233,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Sincronização em segundo plano",
 		descricao: "Envia o que foi feito offline quando a internet volta, mesmo com o app fechado.",
-		impacto: "Sem esse mecanismo, o envio do que foi feito offline não acontece com o app fechado.",
+		impacto: "Sem a Background Sync API, o app perde esse mecanismo de envio com o app fechado.",
 		testar: function () {
 			return "SyncManager" in window;
 		}
@@ -228,7 +243,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Sincronização periódica",
 		descricao: "Atualiza o conteúdo de tempos em tempos no app instalado.",
-		impacto: "Sem esse mecanismo, o app não se atualiza sozinho em intervalos.",
+		impacto: "Sem a Periodic Background Sync API, o app perde esse mecanismo de atualização em intervalos.",
 		testar: function () {
 			return "PeriodicSyncManager" in window;
 		}
@@ -238,7 +253,7 @@ const VERIFICACOES = [
 		categoria: "segundo-plano",
 		nome: "Downloads em segundo plano",
 		descricao: "Baixa arquivos grandes mesmo se o app for fechado.",
-		impacto: "Sem esse mecanismo, o app não consegue continuar um download grande depois de fechado.",
+		impacto: "Sem a Background Fetch API, o app perde esse mecanismo de download com o app fechado.",
 		testar: function () {
 			return "BackgroundFetchManager" in window;
 		}

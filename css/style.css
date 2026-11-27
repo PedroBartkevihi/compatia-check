@@ -226,18 +226,6 @@ main.container{
     transition: width 0.6s ease;
 }
 
-.barra-preenchida.nivel-alto{
-    background-color: var(--ok);
-}
-
-.barra-preenchida.nivel-medio{
-    background-color: #c98a00;
-}
-
-.barra-preenchida.nivel-baixo{
-    background-color: var(--falha);
-}
-
 .placar-texto{
     margin: 0;
     color: var(--texto-suave);
