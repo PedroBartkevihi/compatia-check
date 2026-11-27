@@ -28,7 +28,7 @@ Depois, abra http://localhost:8090.
 - `css/style.css` — estilos.
 - `js/verificacoes.js` — a lista dos recursos verificados. A ordem entra no link de comparação: ao mudar a lista, aumente `VERSAO_VERIFICACOES`.
 - `js/app.js` — interface, placar, comparação, instalação e impressão.
-- `sw.js` — service worker: guarda os arquivos no cache e os atualiza em segundo plano. O nome do cache (`CACHE_APP`) é o mesmo em `sw.js` e em `js/verificacoes.js`.
+- `sw.js` — service worker: guarda os arquivos no cache e os atualiza em segundo plano, sempre conferindo com o servidor (o GitHub Pages manda o navegador guardar os arquivos por 10 minutos). O nome do cache (`CACHE_APP`) é o mesmo em `sw.js` e em `js/verificacoes.js`: troque nos dois a cada versão. Quando uma versão nova assume, a página recarrega uma vez sozinha.
 - `manifest.webmanifest` e `icons/` — manifesto e ícones (os PNG são gerados a partir dos SVG).
 
 ## Limites do protótipo

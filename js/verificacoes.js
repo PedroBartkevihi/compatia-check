@@ -4,7 +4,7 @@
 // Autor: Pedro Farias
 
 const VERSAO_VERIFICACOES = 1;
-const CACHE_APP = "compatia-check-v1";
+const CACHE_APP = "compatia-check-v2";
 
 const CATEGORIAS = [
 	{

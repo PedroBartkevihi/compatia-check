@@ -2,7 +2,7 @@
 // Ao mudar qualquer arquivo da lista, troque o nome do cache (também em js/verificacoes.js, CACHE_APP).
 // Autor: Pedro Farias
 
-const CACHE_APP = "compatia-check-v1";
+const CACHE_APP = "compatia-check-v2";
 const ARQUIVOS = [
 	"./",
 	"./index.html",
@@ -19,7 +19,10 @@ const ARQUIVOS = [
 self.addEventListener("install", function (evento) {
 	evento.waitUntil(
 		caches.open(CACHE_APP).then(function (cache) {
-			return cache.addAll(ARQUIVOS);
+			// "reload" ignora o cache HTTP do navegador (o GitHub Pages manda guardar por 10 minutos)
+			return cache.addAll(ARQUIVOS.map(function (arquivo) {
+				return new Request(arquivo, { cache: "reload" });
+			}));
 		}).then(function () {
 			return self.skipWaiting();
 		})
@@ -50,7 +53,8 @@ self.addEventListener("fetch", function (evento) {
 	evento.respondWith(
 		caches.open(CACHE_APP).then(function (cache) {
 			return cache.match(pedido, { ignoreSearch: true }).then(function (guardado) {
-				const daRede = fetch(pedido).then(function (resposta) {
+				// "no-cache" confere com o servidor antes de usar a cópia do navegador
+				const daRede = fetch(pedido, { cache: "no-cache" }).then(function (resposta) {
 					if (resposta.ok) {
 						cache.put(pedido, resposta.clone());
 					}

@@ -442,6 +442,17 @@
 
 	function registrarServiceWorker() {
 		if ("serviceWorker" in navigator && window.isSecureContext) {
+			// quando uma versão nova do app assume o controle, recarrega uma vez para mostrá-la
+			// (só se já havia uma versão antiga controlando a página; na primeira visita, não)
+			if (navigator.serviceWorker.controller) {
+				let recarregou = false;
+				navigator.serviceWorker.addEventListener("controllerchange", function () {
+					if (!recarregou) {
+						recarregou = true;
+						location.reload();
+					}
+				});
+			}
 			navigator.serviceWorker.register("./sw.js").catch(function () {
 				// sem service worker, a verificação "Pronto para offline" dá indisponível
 			});
